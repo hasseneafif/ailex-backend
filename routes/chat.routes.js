@@ -6,6 +6,11 @@ const { verifyJWT } = require('../middleware/verifyJWT.js');
 
 router.post('/convo',  rateLimitByIP, verifyJWT, handleChat);
 
+
+router.get('/ping', (req, res) => {
+	res.json({ status: 'ok' });
+});
+
 router.get('/meta', meta);
 
 module.exports = router;
