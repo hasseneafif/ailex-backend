@@ -1,20 +1,21 @@
 // File: middleware/rateLimitByIP.js
-const ipMessageCounts = new Map();
-const DAILY_LIMIT = 10;
+const { RateLimiterMemory } = require('rate-limiter-flexible');
 
-function rateLimitByIP(req, res, next) {
-  const ip = req.ip;
-  const count = ipMessageCounts.get(ip) || 0;
-  if (count >= DAILY_LIMIT) {
-    return res.status(429).json({ error: 'Daily message limit reached. Try again tomorrow.' });
+const rateLimiter = new RateLimiterMemory({
+  points: 10,              // 10 requests
+  duration: 24 * 60 * 60,  // per 24 hours
+});
+
+async function rateLimitByIP(req, res, next) {
+  try {
+    await rateLimiter.consume(req.ip); // consume 1 point
+    next();
+  } catch (rejRes) {
+    res.status(429).json({
+      error: 'Daily message limit reached. Try again tomorrow.',
+      retryAfter: new Date(Date.now() + rejRes.msBeforeNext).toISOString(),
+    });
   }
-  ipMessageCounts.set(ip, count + 1);
-  next();
 }
-
-// Daily reset
-setInterval(() => {
-  ipMessageCounts.clear();
-}, 24 * 60 * 60 * 1000);
 
 module.exports = { rateLimitByIP };
