@@ -7,7 +7,7 @@ export async function getStocks(req, res) {
     const stocks = await Stock.find().sort({ stockName: 1 }); 
     res.json({ success: true, stocks });
   } catch (err) {
-    console.error("Error fetching all stocks:", err);
+    console.error("Error fetching all stocks :", err);
     res.status(500).json({ success: false, error: "Failed to fetch stocks" });
   }
 }
