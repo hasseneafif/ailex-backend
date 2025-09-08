@@ -10,19 +10,18 @@
   "author": "Hass",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/inference": "^4.5.3",
+    "@octokit/core": "^7.0.3",
     "axios": "^1.11.0",
     "body-parser": "^1.19.1",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
-    "express": "^4.18.1",
-    "gpt-3-encoder": "^1.1.4",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "morgan": "^1.10.0",
     "node-fetch": "^3.3.2",
-    "rate-limiter-flexible": "^7.2.0",
-    "xlsx": "^0.18.5"
+    "openai": "^5.19.1",
+    "rate-limiter-flexible": "^7.2.0"
   },
   "description": "",
   "devDependencies": {
