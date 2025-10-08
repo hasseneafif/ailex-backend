@@ -2,7 +2,7 @@
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 const rateLimiter = new RateLimiterMemory({
-  points: 10,              // 10 requests
+  points: 20,              // 20 requests
   duration: 24 * 60 * 60,  // per 24 hours
 });
 
