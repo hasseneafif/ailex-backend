@@ -5,6 +5,6 @@ const { rateLimitByIP } = require('../middleware/rateLimit.js');
 
 const router = express.Router();
 
-router.post('/', verifyJWT,rateLimitByIP, analyzePdf);
+router.post('/', verifyJWT, rateLimitByIP, analyzePdf);
 
 module.exports = router;

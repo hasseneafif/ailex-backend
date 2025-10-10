@@ -7,10 +7,12 @@ class AIService {
       apiKey: process.env.AI_KEY,
       defaultHeaders: {
         "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-        "X-Title": "Ailex", 
+        "X-Title": "Ailex",
       }
     });
   }
+
+
 
   parseResponseToJSON(responseText) {
     if (!responseText || typeof responseText !== "string") {
@@ -107,6 +109,9 @@ class AIService {
     }
   }
 
+
+
+  
   async callChatCompletion(userMessage, systemPrompt) {
     const messages = [
       { role: "system", content: systemPrompt },
@@ -118,6 +123,9 @@ class AIService {
       max_tokens: 1000
     });
   }
+
+
+
 
   async callPdfAnalysis(textContent, systemPrompt) {
     const messages = [

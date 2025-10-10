@@ -23,11 +23,9 @@ const chunkText = (text, maxChunkSize = 3000) => {
       currentChunk += (currentChunk.length > 0 ? '. ' : '') + trimmedSentence;
     }
   }
-
   if (currentChunk.length > 0) {
     chunks.push(currentChunk.trim());
   }
-
   return chunks;
 };
 
