@@ -1,17 +1,18 @@
-// services/openrouter.js
 const OpenAI = require('openai');
 
-class OpenRouterService {
+class AIService {
   constructor() {
     this.client = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: process.env.AI_URL,
+      apiKey: process.env.AI_KEY,
       defaultHeaders: {
         "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-        "X-Title": "JurAI", // updated title
+        "X-Title": "Ailex",
       }
     });
   }
+
+
 
   parseResponseToJSON(responseText) {
     if (!responseText || typeof responseText !== "string") {
@@ -77,10 +78,10 @@ class OpenRouterService {
 
 
 
-  async callOpenRouter(messages, options = {}) {
+  async callAI(messages, options = {}) {
     try {
       const response = await this.client.chat.completions.create({
-        model: options.model || "meta-llama/llama-3.3-70b-instruct",
+        model: options.model || process.env.AI_MODEL,
         messages: messages,
         temperature: options.temperature || 0.7,
         max_tokens: options.max_tokens || 1500,
@@ -88,7 +89,7 @@ class OpenRouterService {
         ...options
       });
 
-      console.log('OpenRouter raw response:', response.choices[0].message.content);
+      console.log('AI raw response:', response.choices[0].message.content);
 
       const rawContent = response.choices[0].message.content;
 
@@ -99,26 +100,32 @@ class OpenRouterService {
         throw new Error('Failed to parse AI response to valid JSON');
       }
 
-      console.log('OpenRouter parsed response:', parsedContent);
+      console.log('AI parsed response:', parsedContent);
       return parsedContent;
 
     } catch (error) {
-      console.error('OpenRouter API Error:', error);
-      throw new Error(`OpenRouter API request failed: ${error.message}`);
+      console.error('AI Error:', error);
+      throw new Error(`AI request failed: ${error.message}`);
     }
   }
 
+
+
+  
   async callChatCompletion(userMessage, systemPrompt) {
     const messages = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage }
     ];
 
-    return this.callOpenRouter(messages, {
+    return this.callAI(messages, {
       temperature: 0.3,
       max_tokens: 1000
     });
   }
+
+
+
 
   async callPdfAnalysis(textContent, systemPrompt) {
     const messages = [
@@ -126,11 +133,11 @@ class OpenRouterService {
       { role: "user", content: `Please analyze the following document/contract text for compliance issues:\n\n${textContent}` }
     ];
 
-    return this.callOpenRouter(messages, {
+    return this.callAI(messages, {
       temperature: 0.2,
       max_tokens: 2000
     });
   }
 }
 
-module.exports = new OpenRouterService();
+module.exports = new AIService();
