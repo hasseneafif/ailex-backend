@@ -1,33 +1,7 @@
-// controllers/pdfController.js
 const pdf = require('pdf-parse');
-const openRouterService = require('../services/openrouter');
+const AIService = require('../services/ai-service');
 
-const PDF_SYSTEM_PROMPT = `You are JurAI, a legal auditor specialized in EU contract/document compliance.
-Analyze the provided contract text for legal issues under European Union law.
-Return ONLY a valid JSON in this schema:
-{
-  "issues": [
-    { "clause": "<contract excerpt>", "issue": "<short issue title>", "law_reference": "<treaty/directive/regulation/article>", "severity": "low|medium|high", "explanation": "<short explanation>" }
-  ]
-}
-
-All responses must be in ENGLISH.
-
-Check for:
-- GDPR and data protection compliance
-- EU labor law (working time, equal treatment, workplace safety)
-- Consumer protection and unfair contract terms
-- Digital Services Act / Digital Markets Act obligations
-- Competition law restrictions
-- Any clear violations of EU treaties or directives
-
-Severity levels:
-- High: Clear legal violation, immediate compliance risk
-- Medium: Potential issues that require review
-- Low: Best-practice recommendations or minor concerns
-
-If no problems are detected, return {"issues": []}`;
-
+const PDF_SYSTEM_PROMPT = process.env.PDF_SYSTEM_PROMPT?.replace(/\\n/g, '\n');
 
 const chunkText = (text, maxChunkSize = 3000) => {
   const chunks = [];
@@ -42,7 +16,6 @@ const chunkText = (text, maxChunkSize = 3000) => {
         chunks.push(currentChunk.trim());
         currentChunk = trimmedSentence;
       } else {
-        // Very long sentence
         chunks.push(trimmedSentence.substring(0, maxChunkSize));
         currentChunk = trimmedSentence.substring(maxChunkSize);
       }
@@ -60,51 +33,49 @@ const chunkText = (text, maxChunkSize = 3000) => {
 
 // Fix spacing issues in PDF text
 const fixSpaces = (text) => {
-  text = text.replace(/([a-zà-ÿ])([A-ZÀ-Ÿ])/g, '$1 $2'); // lowercase-uppercase
-  text = text.replace(/([»’])([A-Za-z0-9])/g, '$1 $2');  // punctuation followed by letter/number
-  text = text.replace(/\s+/g, ' '); // collapse multiple spaces
+  text = text.replace(/([a-zà-ÿ])([A-ZÀ-Ÿ])/g, '$1 $2');
+  text = text.replace(/([»’])([A-Za-z0-9])/g, '$1 $2');
+  text = text.replace(/\s+/g, ' ');
   return text;
 };
 
 const analyzePdf = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Aucun fichier PDF téléchargé' });
+      return res.status(400).json({ error: 'No PDF file uploaded.' });
     }
 
     if (req.file.mimetype !== 'application/pdf') {
-      return res.status(400).json({ error: 'Le fichier doit être un PDF' });
+      return res.status(400).json({ error: 'The uploaded file must be a PDF.' });
     }
 
     let pdfData;
     try {
       pdfData = await pdf(req.file.buffer);
     } catch (pdfError) {
-      console.error('Erreur lors de l\'analyse du PDF:', pdfError);
-      return res.status(400).json({ error: 'Impossible de lire le PDF. Vérifiez qu\'il est valide.' });
+      console.error('Error while parsing PDF:', pdfError);
+      return res.status(400).json({ error: 'Unable to read the PDF. Please make sure it is valid.' });
     }
 
     if (!pdfData.text || pdfData.text.trim().length === 0) {
-      return res.status(400).json({ error: 'Aucun contenu textuel trouvé dans le PDF' });
+      return res.status(400).json({ error: 'No textual content found in the PDF.' });
     }
 
-    // Fix spacing issues
     const textContent = fixSpaces(pdfData.text.trim());
-
     const chunks = chunkText(textContent, 3000);
     const allIssues = [];
 
     for (let i = 0; i < chunks.length; i++) {
       try {
-        const chunkPrefix = chunks.length > 1 ? `[Partie ${i + 1}/${chunks.length}] ` : '';
-        const parsedResponse = await openRouterService.callPdfAnalysis(
+        const chunkPrefix = chunks.length > 1 ? `[Part ${i + 1}/${chunks.length}] ` : '';
+        const parsedResponse = await AIService.callPdfAnalysis(
           chunkPrefix + chunks[i],
           PDF_SYSTEM_PROMPT
         );
 
         try {
         } catch (parseError) {
-          console.error(`Impossible de parser la réponse AI pour le chunk ${i + 1}:`, parsedResponse);
+          console.error(`Failed to parse AI response for chunk ${i + 1}:`, parsedResponse);
           continue;
         }
 
@@ -112,7 +83,7 @@ const analyzePdf = async (req, res) => {
           allIssues.push(...parsedResponse.issues);
         }
       } catch (chunkError) {
-        console.error(`Erreur lors de l'analyse du chunk ${i + 1}:`, chunkError);
+        console.error(`Error analyzing chunk ${i + 1}:`, chunkError);
       }
     }
 
@@ -133,9 +104,9 @@ const analyzePdf = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur lors de l\'analyse du PDF:', error);
+    console.error('Error during PDF analysis:', error);
     res.status(500).json({
-      error: 'Impossible d\'analyser le PDF. Veuillez réessayer.',
+      error: 'Unable to analyze the PDF. Please try again later.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

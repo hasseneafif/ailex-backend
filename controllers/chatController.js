@@ -1,23 +1,7 @@
-// controllers/chatController.js
-const openRouterService = require('../services/openrouter');
+const AIService = require('../services/ai-service');
 
-const CHAT_SYSTEM_PROMPT = `You are JurAI, a legal assistant specialized in European Union law.
-Your role: answer user questions by citing relevant EU treaties, directives, regulations, and case law.
-Always return a JSON in this schema:
-{
-  "answer": "<short-human-readable-explanation>",
-  "risks": [
-    { "type": "<Labor|Data Protection|Consumer|Competition|Other>", "law_reference": "<treaty/directive/regulation/article>", "severity": "low|medium|high", "explanation": "<short text>" }
-  ]
-}
+const CHAT_SYSTEM_PROMPT = process.env.CHAT_SYSTEM_PROMPT?.replace(/\\n/g, '\n');
 
-Guidelines:
-- Focus on EU law (GDPR, labor law, consumer protection, competition law, digital services, etc.)
-- Identify and cite relevant legal sources when possible
-- Provide clear and actionable explanations
-- Classify severity as low, medium, or high depending on the importance of the issue
-- If no risks or issues are identified, return an empty "risks" array
-`;
 
 const handleChatMessage = async (req, res) => {
   try {
@@ -31,7 +15,7 @@ const handleChatMessage = async (req, res) => {
       return res.status(400).json({ error: 'Message too long. Maximum 1000 characters allowed.' });
     }
 
-    const parsedResponse = await openRouterService.callChatCompletion(message, CHAT_SYSTEM_PROMPT);
+    const parsedResponse = await AIService.callChatCompletion(message, CHAT_SYSTEM_PROMPT);
     
     try {
     } catch (parseError) {

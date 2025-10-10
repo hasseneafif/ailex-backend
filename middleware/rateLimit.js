@@ -1,4 +1,3 @@
-// File: middleware/rateLimitByIP.js
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 const rateLimiter = new RateLimiterMemory({
